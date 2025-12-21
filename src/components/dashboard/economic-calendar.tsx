@@ -577,26 +577,28 @@ const EventRow = ({ event, viewMode }: { event: CalendarEvent, viewMode: ViewMod
     return (
         <div className="group mb-1">
             <div 
-                className={`grid grid-cols-[50px_1fr_240px] items-center gap-4 text-sm p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-all duration-200 border border-transparent ${isOpen ? 'bg-muted/50 rounded-b-none border-border/50' : 'hover:border-border/30'}`}
+                className={`grid grid-cols-[50px_1fr_100px] sm:grid-cols-[50px_1fr_240px] items-center gap-2 sm:gap-4 text-sm p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-all duration-200 border border-transparent ${isOpen ? 'bg-muted/50 rounded-b-none border-border/50' : 'hover:border-border/30'}`}
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <ImportanceIndicator importance={event.importance} />
-                    <span>{event.time}</span>
+                    <span className="text-xs sm:text-sm">{event.time}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                    {getIconForCategory(event.category, event.country, event.ticker)}
-                    <div className="flex flex-col">
-                         <span className="font-medium text-foreground flex items-center gap-2">
-                            {event.event}
-                            <ChevronRight className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
+                <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                    <div className="flex-shrink-0">
+                        {getIconForCategory(event.category, event.country, event.ticker)}
+                    </div>
+                    <div className="flex flex-col overflow-hidden">
+                         <span className="font-medium text-foreground flex items-center gap-1 sm:gap-2 truncate">
+                            <span className="truncate">{event.event}</span>
+                            <ChevronRight className={`w-3 h-3 flex-shrink-0 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
                         </span>
                     </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4 text-right">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 text-right">
                     {event.customData ? (
                         <>
-                            <div className="flex flex-col">
+                            <div className="flex flex-col hidden sm:flex">
                                 {event.customData.col1 && (
                                     <>
                                         <span className="text-xs text-muted-foreground">{event.customData.col1.label}</span>
@@ -604,7 +606,7 @@ const EventRow = ({ event, viewMode }: { event: CalendarEvent, viewMode: ViewMod
                                     </>
                                 )}
                             </div>
-                            <div className="flex flex-col">
+                            <div className="flex flex-col hidden sm:flex">
                                 {event.customData.col2 && (
                                     <>
                                         <span className="text-xs text-muted-foreground">{event.customData.col2.label}</span>
@@ -615,8 +617,8 @@ const EventRow = ({ event, viewMode }: { event: CalendarEvent, viewMode: ViewMod
                             <div className="flex flex-col">
                                 {event.customData.col3 && (
                                     <>
-                                        <span className="text-xs text-muted-foreground">{event.customData.col3.label}</span>
-                                        <span className="font-code font-semibold mt-1 text-foreground">{event.customData.col3.value}</span>
+                                        <span className="text-xs text-muted-foreground hidden sm:inline">{event.customData.col3.label}</span>
+                                        <span className="font-code font-semibold mt-0 sm:mt-1 text-foreground">{event.customData.col3.value}</span>
                                     </>
                                 )}
                             </div>
@@ -624,19 +626,19 @@ const EventRow = ({ event, viewMode }: { event: CalendarEvent, viewMode: ViewMod
                     ) : (
                         <>
                             <div className="flex flex-col">
-                                <span className="text-xs text-muted-foreground">실제</span>
-                                <span className={`font-code font-semibold mt-1 ${
+                                <span className="text-xs text-muted-foreground hidden sm:inline">실제</span>
+                                <span className={`font-code font-semibold mt-0 sm:mt-1 ${
                                     event.actual && event.consensus 
                                     // Simple logic check for color (just demo)
                                     ? (parseFloat(event.actual) > parseFloat(event.consensus) ? 'text-red-500' : 'text-blue-500')
                                     : 'text-foreground'
                                 }`}>{event.actual ?? '--'}</span>
                             </div>
-                            <div className="flex flex-col">
+                            <div className="flex flex-col hidden sm:flex">
                                 <span className="text-xs text-muted-foreground">이전</span>
                                 <span className="font-code text-foreground font-semibold mt-1">{event.previous ?? '--'}</span>
                             </div>
-                            <div className="flex flex-col">
+                            <div className="flex flex-col hidden sm:flex">
                                 <span className="text-xs text-muted-foreground">예측</span>
                                 <span className="font-code text-foreground font-semibold mt-1">{event.consensus ?? '--'}</span>
                             </div>
@@ -1387,16 +1389,21 @@ export default function EconomicCalendar() {
                              </div>
 
                              {/* Market Snapshot (BTC Dom/Kimchi) - Moved Here */}
-                             <div className="grid grid-cols-2 gap-3 mb-6">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                                  {/* Left Column: BTC Dominance & Price */}
                                  <div className="bg-background p-3 rounded-lg border flex flex-col items-center justify-center shadow-sm relative overflow-hidden">
-                                     <span className="text-[10px] text-muted-foreground mb-1">BTC 도미넌스</span>
-                                     <span className="text-sm font-bold mb-2">52.1%</span>
-                                     
-                                     <div className="w-full h-px bg-border/50 mb-2" />
-                                     
-                                     <span className="text-[10px] text-muted-foreground mb-1">BTC 현재가</span>
-                                     <span className="text-sm font-bold text-foreground">{MOCK_CURRENT_PRICES['BTC'].toLocaleString()}</span>
+                                     <div className="flex w-full justify-between items-center sm:flex-col sm:justify-center">
+                                         <div className="flex flex-col items-center">
+                                            <span className="text-[10px] text-muted-foreground mb-1">BTC 도미넌스</span>
+                                            <span className="text-sm font-bold mb-0 sm:mb-2">52.1%</span>
+                                         </div>
+                                         <div className="h-8 w-px bg-border/50 mx-2 sm:hidden" />
+                                         <div className="hidden sm:block w-full h-px bg-border/50 mb-2" />
+                                         <div className="flex flex-col items-center">
+                                            <span className="text-[10px] text-muted-foreground mb-1">BTC 현재가</span>
+                                            <span className="text-sm font-bold text-foreground">{MOCK_CURRENT_PRICES['BTC'].toLocaleString()}</span>
+                                         </div>
+                                     </div>
                                  </div>
 
                                  {/* Right Column: Dynamic Indicator & Selector */}
