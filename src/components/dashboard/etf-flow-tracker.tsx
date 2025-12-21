@@ -377,7 +377,7 @@ export default function EtfFlowTracker({ initialViewMode = 'chart', onToggleView
       }, {} as {[key: string]: number});
       
       return (
-        <div className="flex items-center flex-wrap gap-x-4 gap-y-1">
+        <div className="flex items-center flex-nowrap md:flex-wrap gap-x-4 gap-y-1 min-w-max">
           {chartAssets.map(asset => {
             const total = totalFlows[asset];
             const isActive = activeChartAssets.includes(asset);
@@ -403,7 +403,7 @@ export default function EtfFlowTracker({ initialViewMode = 'chart', onToggleView
     }
 
     return (
-       <div className="flex items-center flex-wrap gap-x-4 gap-y-1">
+       <div className="flex items-center flex-nowrap md:flex-wrap gap-x-4 gap-y-1 min-w-max">
             {allAssets.map(asset => {
             const isActive = activeListAsset === asset.id;
             return (
@@ -429,9 +429,9 @@ export default function EtfFlowTracker({ initialViewMode = 'chart', onToggleView
     <CardHeader>
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
             <CardTitle>현물 ETF 순위</CardTitle>
-            <div className="flex items-center gap-2 mt-2 md:mt-0">
+            <div className="flex items-center gap-2 mt-2 md:mt-0 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                 {viewMode === 'chart' && (
-                    <div className="flex gap-1 rounded-md bg-muted p-1 self-start">
+                    <div className="flex gap-1 rounded-md bg-muted p-1 self-start flex-shrink-0">
                     {(['1M', '6M', '1Y', 'All'] as Timeframe[]).map((tf) => (
                         <Button
                         key={tf}
@@ -445,7 +445,7 @@ export default function EtfFlowTracker({ initialViewMode = 'chart', onToggleView
                     ))}
                     </div>
                 )}
-                <div className="flex gap-1 rounded-md bg-muted p-1 self-start">
+                <div className="flex gap-1 rounded-md bg-muted p-1 self-start flex-shrink-0">
                     <Button size="sm" variant={viewMode === 'chart' ? 'default' : 'ghost'} className="px-3" onClick={() => handleViewChange('chart')}>
                         <BarChartBig className="h-4 w-4" />
                     </Button>
@@ -455,7 +455,7 @@ export default function EtfFlowTracker({ initialViewMode = 'chart', onToggleView
                 </div>
             </div>
         </div>
-        <div className="pt-2">
+        <div className="pt-2 overflow-x-auto pb-2 scrollbar-hide">
           {renderAssetSelector()}
         </div>
     </CardHeader>

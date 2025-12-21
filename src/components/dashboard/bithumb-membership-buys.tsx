@@ -105,7 +105,7 @@ export default function BithumbMembershipBuys() {
                     </div>
                     <span className="text-sm text-muted-foreground">어제 기준</span>
                 </div>
-                <ScrollArea className="w-full whitespace-nowrap">
+                <ScrollArea className="w-full whitespace-nowrap pb-2">
                     <div className="flex items-center gap-2 pt-2">
                         {membershipLevels.map(level => (
                             <Button
@@ -113,7 +113,7 @@ export default function BithumbMembershipBuys() {
                                 size="sm"
                                 variant={activeTab === level.id ? 'default' : 'ghost'}
                                 onClick={() => setActiveTab(level.id)}
-                                className="rounded-full px-4"
+                                className="rounded-full px-4 flex-shrink-0"
                             >
                                 {level.label}
                             </Button>

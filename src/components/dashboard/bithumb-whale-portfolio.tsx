@@ -68,7 +68,7 @@ export default function BithumbWhalePortfolio() {
                         </TooltipProvider>
                     </div>
                 </div>
-                 <ScrollArea className="w-full whitespace-nowrap">
+                <ScrollArea className="w-full whitespace-nowrap pb-2">
                     <div className="flex items-center gap-2 pt-2">
                         {portfolioTabs.map(tab => (
                             <Button
@@ -76,7 +76,7 @@ export default function BithumbWhalePortfolio() {
                                 size="sm"
                                 variant={activeTab === tab.id ? 'default' : 'ghost'}
                                 onClick={() => setActiveTab(tab.id)}
-                                className="rounded-full px-4"
+                                className="rounded-full px-4 flex-shrink-0"
                             >
                                 {tab.label}
                             </Button>

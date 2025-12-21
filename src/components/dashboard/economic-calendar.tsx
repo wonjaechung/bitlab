@@ -1122,7 +1122,7 @@ export default function EconomicCalendar() {
       )}
 
       <div className="flex-1 mt-4">
-        <ScrollArea className="h-[calc(100vh-24rem)]">
+        <ScrollArea className="h-[calc(100vh-14rem)] pb-20">
           <div className="space-y-6 pr-4">
             {Object.keys(groupedEvents).length > 0 ? (
                 Object.entries(groupedEvents).map(([dateStr, events]) => {
@@ -1490,7 +1490,7 @@ export default function EconomicCalendar() {
 
                              <div className="mb-6">
                                 <Label className="text-xs text-muted-foreground mb-2 block">매매 메모</Label>
-                                <p className="text-sm whitespace-pre-wrap leading-relaxed">{journalEntries.find(j => j.date === format(selectedDate, 'yyyy-MM-dd'))?.content}</p>
+                                <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">{journalEntries.find(j => j.date === format(selectedDate, 'yyyy-MM-dd'))?.content}</p>
                              </div>
                              
                              <div className="mb-6 flex flex-wrap gap-2">
@@ -1514,6 +1514,7 @@ export default function EconomicCalendar() {
                  </div>
              )}
           </div>
+          <div className="h-20" /> {/* Extra spacer for mobile scroll */}
         </ScrollArea>
       </div>
     </div>

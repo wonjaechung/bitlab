@@ -92,12 +92,10 @@ export default function GrayscaleHoldingsChart() {
       <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between">
         <div>
             <CardTitle>그레이스케일 보유량</CardTitle>
-            <CardDescription as="div" className="mt-2">
-                <div className="flex flex-col items-start">
-                    <span className="font-code text-xs text-muted-foreground">
-                        총 {holdingData.total.toLocaleString()} / 공급량의 {holdingData.percentOfSupply}%
-                    </span>
-                </div>
+            <CardDescription className="mt-2 flex flex-col items-start">
+                <span className="font-code text-xs text-muted-foreground">
+                    총 {holdingData.total.toLocaleString()} / 공급량의 {holdingData.percentOfSupply}%
+                </span>
             </CardDescription>
         </div>
         <div className="flex items-center gap-2 mt-2 md:mt-0">
