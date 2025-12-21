@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 5% 96%;
+    --foreground: 240 10% 3.9%;
+    --background-dark: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-dark: 240 6% 10%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 35 91% 50%; /* Bithumb Lab Orange */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 259 53% 58%; /* Slate Blue */
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 35 91% 50%;
+    --radius: 0.5rem;
+    --bullish: 142 71% 45%;
+    --bearish: 0 72% 51%;
+    --chart-1: 35 91% 50%; /* Bithumb Lab Orange */
+    --chart-2: 221 83% 53%; /* Blue */
+    --chart-3: 142 71% 45%; /* Green */
+    --chart-4: 340 82% 52%; /* Pink */
+    --chart-5: 48 96% 50%; /* Yellow */
+  }
+
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    --card: 240 6% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 35 91% 50%; /* Bithumb Lab Orange */
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 259 53% 58%; /* Slate Blue */
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 35 91% 50%;
+    --bullish: 142 71% 45%;
+    --bearish: 0 72% 51%;
+    --chart-1: 35 91% 50%;
+    --chart-2: 221 83% 53%;
+    --chart-3: 142 71% 45%;
+    --chart-4: 340 82% 52%;
+    --chart-5: 48 96% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+.pulse-red {
+  animation: pulse-red 1s infinite;
+}
+
+@keyframes pulse-red {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--bearish));
+  }
+  70% {
+    box-shadow: 0 0 0 10px hsla(var(--bearish), 0);
+  }
+}
