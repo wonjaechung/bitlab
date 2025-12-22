@@ -893,7 +893,7 @@ export default function EconomicCalendar() {
   const [moodScore, setMoodScore] = useState([50]); // 0-100
   const [moodEmoji, setMoodEmoji] = useState<string>('');
   const [mistakeTags, setMistakeTags] = useState<string[]>([]);
-  const [activeRightIndicators, setActiveRightIndicators] = useState<IndicatorId[]>(['kimchi']);
+  const [activeRightIndicators, setActiveRightIndicators] = useState<IndicatorId[]>(['kimchi', 'volume', 'fear', 'drop']);
   const [isIndicatorDialogOpen, setIsIndicatorDialogOpen] = useState(false);
 
   // Update journal content when date changes
@@ -1219,15 +1219,15 @@ export default function EconomicCalendar() {
                                              </div>
 
                                              {/* Market Snapshot */}
-                                             <div className="grid grid-cols-2 gap-3 mb-6">
-                                                 <div className="bg-muted/30 p-3 rounded-lg flex flex-col items-center justify-center border border-border/50">
-                                                     <span className="text-xs text-muted-foreground mb-1">BTC 도미넌스</span>
-                                                     <span className="text-lg font-bold">52.1%</span>
-                                                 </div>
-                                                 <div className="bg-muted/30 p-3 rounded-lg flex flex-col items-center justify-center border border-border/50">
-                                                     <span className="text-xs text-muted-foreground mb-1">김치 프리미엄</span>
-                                                     <span className="text-lg font-bold text-red-500">+3.2%</span>
-                                                 </div>
+                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
+                                                 {['dominance', 'kimchi', 'volume', 'fear', 'drop'].map(id => (
+                                                     <div key={id} className="bg-muted/30 p-2 rounded-lg flex flex-col items-center justify-center border border-border/50 text-center">
+                                                         <span className="text-[10px] text-muted-foreground mb-1">{indicatorData[id as IndicatorId].title}</span>
+                                                         <span className={`text-base font-bold ${id === 'kimchi' ? 'text-red-500' : ''}`}>
+                                                            {indicatorData[id as IndicatorId].value}
+                                                         </span>
+                                                     </div>
+                                                 ))}
                                              </div>
 
                                              <Button className="w-full h-12 text-lg" onClick={() => setDiaryStep('write')}>
