@@ -20,7 +20,7 @@ import { ArrowDown, ArrowUp, BarChartBig, HelpCircle, List } from 'lucide-react'
 import { Progress } from '../ui/progress';
 import { Button } from '../ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { ScrollArea } from '../ui/scroll-area';
+import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
 type ViewMode = 'chart' | 'list';
@@ -123,7 +123,8 @@ const PremiumCell = ({ value }: { value: number }) => {
 };
 
 const EtfTable = ({ data, totalAUM, assetName }: { data: {rank: number, ticker: string, name: string, price: number, changeAbsolute: number, changePercent: number, daily: number, aum: number, premium: number}[], totalAUM: number, assetName: string }) => (
-    <ScrollArea className="h-full">
+    <div className="h-full overflow-auto">
+        <div className="min-w-[800px]">
         <Table>
             <TableHeader>
                 <TableRow>
@@ -200,7 +201,8 @@ const EtfTable = ({ data, totalAUM, assetName }: { data: {rank: number, ticker: 
                 ))}
             </TableBody>
         </Table>
-    </ScrollArea>
+        </div>
+    </div>
 );
 
 const generateChartData = (timeframe: Timeframe) => {

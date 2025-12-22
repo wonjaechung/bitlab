@@ -614,7 +614,7 @@ const CalculatorDialog = ({
 export default function MarketChart() {
     const [activeTimeframe, setActiveTimeframe] = useState('24h');
     const [activeChartType, setActiveChartType] = useState<'원화' | '사토시' | '시가총액'>('원화');
-    const [selectedCoin, setSelectedCoin] = useState(allCoins[0]);
+    const [selectedCoin, setSelectedCoin] = useState(allCoins.find(c => c.value === 'XRP') || allCoins[0]);
     const [popoverOpen, setPopoverOpen] = useState(false);
     
     const chartData = useMemo(() => {

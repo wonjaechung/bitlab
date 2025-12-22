@@ -74,34 +74,32 @@ const CustomTooltip = ({ active, payload, label, asset }: any) => {
 };
 
 const HoldingsTable = () => (
-    <ScrollArea className="h-full">
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead className="w-[60px]">#</TableHead>
-                    <TableHead>회사명</TableHead>
-                    <TableHead>국가</TableHead>
-                    <TableHead>티커</TableHead>
-                    <TableHead className="text-right">보유량 (BTC)</TableHead>
-                    <TableHead className="text-right">BTC 공급량 %</TableHead>
-                    <TableHead className="text-right">시가총액</TableHead>
+    <Table>
+        <TableHeader>
+            <TableRow>
+                <TableHead className="w-[60px]">#</TableHead>
+                <TableHead>회사명</TableHead>
+                <TableHead>국가</TableHead>
+                <TableHead>티커</TableHead>
+                <TableHead className="text-right">보유량 (BTC)</TableHead>
+                <TableHead className="text-right">BTC 공급량 %</TableHead>
+                <TableHead className="text-right">시가총액</TableHead>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            {corporateHoldingsData.map((company) => (
+                <TableRow key={company.rank}>
+                    <TableCell className="font-medium text-muted-foreground">{company.rank}</TableCell>
+                    <TableCell className="font-medium">{company.companyName}</TableCell>
+                    <TableCell>{company.listingLocation}</TableCell>
+                    <TableCell className="font-code">{company.ticker}</TableCell>
+                    <TableCell className="text-right font-code">{company.holdings.toLocaleString()}</TableCell>
+                    <TableCell className="text-right font-code">{company.btcSupplyPercent.toFixed(3)}%</TableCell>
+                    <TableCell className="text-right font-code">{company.marketCap}</TableCell>
                 </TableRow>
-            </TableHeader>
-            <TableBody>
-                {corporateHoldingsData.map((company) => (
-                    <TableRow key={company.rank}>
-                        <TableCell className="font-medium text-muted-foreground">{company.rank}</TableCell>
-                        <TableCell className="font-medium">{company.companyName}</TableCell>
-                        <TableCell>{company.listingLocation}</TableCell>
-                        <TableCell className="font-code">{company.ticker}</TableCell>
-                        <TableCell className="text-right font-code">{company.holdings.toLocaleString()}</TableCell>
-                        <TableCell className="text-right font-code">{company.btcSupplyPercent.toFixed(3)}%</TableCell>
-                        <TableCell className="text-right font-code">{company.marketCap}</TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    </ScrollArea>
+            ))}
+        </TableBody>
+    </Table>
 );
 
 export default function CorporateHoldingsChart() {
@@ -111,9 +109,15 @@ export default function CorporateHoldingsChart() {
   const chartData = useMemo(() => generateChartData(activeAsset, timeframe), [activeAsset, timeframe]);
   const holdingData = corporateHoldings[activeAsset as keyof typeof corporateHoldings];
 
-  const renderContent = () => {
+    const renderContent = () => {
     if (viewMode === 'list') {
-        return <HoldingsTable />;
+        return (
+            <div className="h-full overflow-auto">
+                <div className="min-w-[800px]">
+                    <HoldingsTable />
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -160,7 +164,7 @@ export default function CorporateHoldingsChart() {
                 </span>
             </CardDescription>
         </div>
-         <div className="flex items-center gap-2 mt-2 md:mt-0">
+         <div className="flex items-center gap-2 mt-2 md:mt-0 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
             <Select value={activeAsset} onValueChange={setActiveAsset}>
                 <SelectTrigger className="w-[100px]">
                     <SelectValue placeholder="자산 선택" />
