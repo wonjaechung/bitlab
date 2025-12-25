@@ -24,7 +24,7 @@ import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
 type ViewMode = 'chart' | 'list';
-type Timeframe = '1M' | '6M' | '1Y' | 'All';
+type Timeframe = '1W' | '1M' | '1Y' | 'All';
 
 const btcEtfData = [
     { rank: 1, ticker: 'IBIT', name: 'IBIT (BlackRock)', price: 52.1, changeAbsolute: -0.39, changePercent: -0.74, daily: 162.2, aum: 19890.3, premium: 0.02 },
@@ -86,6 +86,14 @@ const formatMillion = (value: number) => {
         return `${(value / 1000).toFixed(2)}B`;
     }
     return `${value.toFixed(1)}M`;
+}
+
+const formatKoreanNumber = (value: number) => {
+  const absValue = Math.abs(value);
+  if (absValue >= 10000) {
+      return `${(value / 10000).toFixed(2)}조`;
+  }
+  return `${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}억`;
 }
 
 const FlowCell = ({ value, unit = 'M' }: { value: number; unit?: string }) => {
@@ -207,24 +215,54 @@ const EtfTable = ({ data, totalAUM, assetName }: { data: {rank: number, ticker: 
 
 const generateChartData = (timeframe: Timeframe) => {
   let days = 30;
-  if (timeframe === '6M') days = 180;
+  if (timeframe === '1W') days = 7;
+  if (timeframe === '1M') days = 30;
   if (timeframe === '1Y') days = 365;
   if (timeframe === 'All') days = 500;
   
   const data = [];
   let btcPrice = 65000;
+  let accumulatedAUM = { BTC: 50000, ETH: 25000, XRP: 10000, SOL: 8000 };
+
   for (let i = days -1; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
+    
+    // Price trend
     btcPrice += (Math.random() - 0.5) * 2000;
-    data.push({
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      BTC: (Math.random() - 0.5) * 400,
-      ETH: (Math.random() - 0.5) * 200,
-      XRP: (Math.random() - 0.5) * 150,
-      SOL: (Math.random() - 0.5) * 180,
-      BTC_Price: btcPrice,
-    });
+
+    // AUM/Flow fluctuations
+    const btcFlow = (Math.random() - 0.48) * 800; // Slight positive bias
+    const ethFlow = (Math.random() - 0.49) * 400;
+    const xrpFlow = (Math.random() - 0.5) * 300;
+    const solFlow = (Math.random() - 0.48) * 360;
+
+    accumulatedAUM.BTC += btcFlow;
+    accumulatedAUM.ETH += ethFlow;
+    accumulatedAUM.XRP += xrpFlow;
+    accumulatedAUM.SOL += solFlow;
+
+    if (timeframe === '1W' || timeframe === '1M') {
+        // For 1W and 1M, show Net Flow
+        data.push({
+            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            BTC: Math.floor(btcFlow),
+            ETH: Math.floor(ethFlow),
+            XRP: Math.floor(xrpFlow),
+            SOL: Math.floor(solFlow),
+            BTC_Price: btcPrice,
+        });
+    } else {
+        // For other timeframes, show Total AUM
+        data.push({
+            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            BTC: Math.floor(accumulatedAUM.BTC),
+            ETH: Math.floor(accumulatedAUM.ETH),
+            XRP: Math.floor(accumulatedAUM.XRP),
+            SOL: Math.floor(accumulatedAUM.SOL),
+            BTC_Price: btcPrice,
+        });
+    }
   }
   return data;
 };
@@ -241,10 +279,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <hr className="my-1 border-border" />
         {flowPayload.map((p: any) => (
             <p key={p.dataKey} className="text-sm" style={{ color: p.color }}>
-                {`${p.dataKey}: ${p.value.toFixed(1)}억 원`}
+                {`${p.dataKey}: ${p.value >= 0 ? '+' : ''}${formatKoreanNumber(p.value)}`}
             </p>
         ))}
-         <p className="text-sm font-semibold">{`총합: ${total.toFixed(1)}억 원`}</p>
+         <p className="text-sm font-semibold">{`총합: ${total >= 0 ? '+' : ''}${formatKoreanNumber(total)}`}</p>
          {pricePayload && (
             <p className="text-sm" style={{ color: pricePayload.color }}>
                 {`BTC 가격: $${pricePayload.value.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`}
@@ -260,6 +298,7 @@ const chartAssets = ['BTC', 'ETH', 'XRP', 'SOL'];
 
 const ChartView = ({timeframe, activeAssets, toggleChartAsset}: {timeframe: Timeframe, activeAssets: string[], toggleChartAsset: (asset: string) => void}) => {
     const chartData = useMemo(() => generateChartData(timeframe), [timeframe]);
+    const isFlowView = timeframe === '1W' || timeframe === '1M';
     
     return (
         <div className='h-full'>
@@ -292,28 +331,45 @@ const ChartView = ({timeframe, activeAssets, toggleChartAsset}: {timeframe: Time
                     <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--accent)/0.1)' }} />
                     <Legend
                         verticalAlign="top"
-                        align="end"
                         content={({ payload }) => {
                         const btcPricePayload = payload?.find(p => p.dataKey === 'BTC_Price');
-                        return btcPricePayload ? (
-                            <div className="flex justify-end items-center gap-2 text-sm -mt-2 mb-2">
-                                <div className="flex items-center gap-1">
-                                    <div className="w-3 h-0.5" style={{ backgroundColor: btcPricePayload.color }}/>
-                                    <span>BTC 가격</span>
+                        return (
+                            <div className="flex justify-between items-center w-full px-2 text-sm -mt-2 mb-2">
+                                <div className="font-bold text-muted-foreground">
+                                    {isFlowView ? '순유입' : 'AUM'}
                                 </div>
+                                {btcPricePayload && (
+                                    <div className="flex items-center gap-1">
+                                        <div className="w-3 h-0.5" style={{ backgroundColor: btcPricePayload.color }}/>
+                                        <span>BTC 가격</span>
+                                    </div>
+                                )}
                             </div>
-                        ) : null;
+                        );
                         }}
                     />
                     {activeAssets.map((asset, index) => (
-                        <Bar 
-                            key={asset} 
-                            yAxisId="left"
-                            dataKey={asset} 
-                            stackId="a" 
-                            fill={assetColors[asset]} 
-                            radius={activeAssets.length === 1 || index === activeAssets.length -1 ? [4,4,0,0] : [0,0,0,0]}
-                        />
+                        isFlowView ? (
+                             <Bar 
+                                key={asset} 
+                                yAxisId="left"
+                                dataKey={asset} 
+                                stackId="a" // Keep stack for flow? Or side-by-side? Usually flow is better stacked if multiple
+                                fill={assetColors[asset]} 
+                                radius={activeAssets.length === 1 || index === activeAssets.length -1 ? [4,4,0,0] : [0,0,0,0]}
+                            />
+                        ) : (
+                            <Line
+                                key={asset}
+                                yAxisId="left"
+                                type="monotone"
+                                dataKey={asset}
+                                stroke={assetColors[asset]}
+                                strokeWidth={2}
+                                dot={false}
+                                fill={`url(#gradient-${asset})`}
+                            />
+                        )
                     ))}
                     <Line
                         yAxisId="right"
@@ -373,13 +429,21 @@ export default function EtfFlowTracker({ initialViewMode = 'chart', onToggleView
   const renderAssetSelector = () => {
     if (viewMode === 'chart') {
       const chartData = generateChartData(timeframe);
+      const isFlowView = timeframe === '1W' || timeframe === '1M';
+
       const totalFlows = chartAssets.reduce((acc, asset) => {
-          acc[asset] = chartData.reduce((sum, item) => sum + (item[asset as keyof typeof item] as number), 0);
+          if (isFlowView) {
+             acc[asset] = chartData.reduce((sum, item) => sum + (item[asset as keyof typeof item] as number), 0);
+          } else {
+             // For AUM view, take the last value
+             const lastItem = chartData[chartData.length - 1];
+             acc[asset] = lastItem ? (lastItem[asset as keyof typeof lastItem] as number) : 0;
+          }
           return acc;
       }, {} as {[key: string]: number});
-      
+
       return (
-        <div className="flex items-center flex-nowrap md:flex-wrap gap-x-4 gap-y-1 min-w-max">
+        <div className="flex items-center flex-wrap gap-x-3 gap-y-1">
           {chartAssets.map(asset => {
             const total = totalFlows[asset];
             const isActive = activeChartAssets.includes(asset);
@@ -387,15 +451,15 @@ export default function EtfFlowTracker({ initialViewMode = 'chart', onToggleView
               <button
                 key={asset}
                 onClick={() => toggleChartAsset(asset)}
-                className={`flex items-center gap-2 cursor-pointer transition-opacity ${!isActive && 'opacity-50 hover:opacity-100'}`}
+                className={`flex items-center gap-1.5 cursor-pointer transition-opacity ${!isActive && 'opacity-50 hover:opacity-100'}`}
               >
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: assetColors[asset] }} />
-                <span className={`font-semibold ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>{asset}</span>
-                <span className={`font-code text-sm ${
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: assetColors[asset] }} />
+                <span className={`font-semibold text-xs ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>{asset}</span>
+                <span className={`font-code text-xs ${
                     total > 0 ? 'text-bullish' : 'text-destructive'
                   }`
                 }>
-                    {total > 0 ? '+' : ''}{(total).toFixed(1)}억
+                    {total > 0 ? '+' : ''}{formatKoreanNumber(total)}
                 </span>
               </button>
             )
@@ -405,7 +469,7 @@ export default function EtfFlowTracker({ initialViewMode = 'chart', onToggleView
     }
 
     return (
-       <div className="flex items-center flex-nowrap md:flex-wrap gap-x-4 gap-y-1 min-w-max">
+       <div className="flex items-center flex-wrap gap-x-3 gap-y-1">
             {allAssets.map(asset => {
             const isActive = activeListAsset === asset.id;
             return (
@@ -429,12 +493,12 @@ export default function EtfFlowTracker({ initialViewMode = 'chart', onToggleView
   return (
     <Card>
     <CardHeader>
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
-            <CardTitle>현물 ETF 순위</CardTitle>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-y-2">
+            <CardTitle>ETF 순유입</CardTitle>
             <div className="flex items-center gap-2 mt-2 md:mt-0 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                 {viewMode === 'chart' && (
                     <div className="flex gap-1 rounded-md bg-muted p-1 self-start flex-shrink-0">
-                    {(['1M', '6M', '1Y', 'All'] as Timeframe[]).map((tf) => (
+                    {(['1W', '1M', '1Y', 'All'] as Timeframe[]).map((tf) => (
                         <Button
                         key={tf}
                         size="sm"

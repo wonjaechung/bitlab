@@ -18,14 +18,16 @@ const positionsData = [
 ];
 
 const PositionBar = ({ long, short }: { long: number, short: number }) => {
-    const longPercent = (long / (long + short)) * 100;
+    const total = long + short;
+    const longPercent = (long / total) * 100;
+    const shortPercent = (short / total) * 100;
     
     return (
         <div className="w-full bg-bearish/20 rounded-full h-5 flex overflow-hidden relative border">
-            <div className="bg-bullish/50 h-full" style={{ width: `${longPercent}%` }}></div>
+            <div className="bg-bullish/50 h-full transition-all duration-500" style={{ width: `${longPercent}%` }}></div>
              <div className="absolute inset-0 flex items-center justify-between px-2 text-xs font-medium">
-                <span className="text-bullish font-semibold">{long.toFixed(2)}억원</span>
-                <span className="text-bearish font-semibold">{short.toFixed(2)}억원</span>
+                <span className="text-bullish font-semibold">{longPercent.toFixed(1)}%</span>
+                <span className="text-bearish font-semibold">{shortPercent.toFixed(1)}%</span>
             </div>
         </div>
     );
@@ -37,7 +39,7 @@ export default function DexFuturesPositions() {
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <CardTitle className="font-headline text-lg">Hyperliquid 고래 상위 선물포지션</CardTitle>
+                        <CardTitle className="font-headline text-lg">Hyperliquid 롱/숏 비율</CardTitle>
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger>
@@ -55,12 +57,11 @@ export default function DexFuturesPositions() {
                 <ScrollArea className="h-64">
                     <div className="space-y-3">
                         {positionsData.map(item => (
-                            <div key={item.ticker} className="grid grid-cols-5 items-center gap-4 text-sm">
+                            <div key={item.ticker} className="grid grid-cols-4 items-center gap-4 text-sm">
                                 <span className="col-span-1 font-bold">{item.ticker}</span>
                                 <div className="col-span-3">
                                     <PositionBar long={item.long} short={item.short} />
                                 </div>
-                                <span className="col-span-1 text-right font-code text-muted-foreground">{item.total.toFixed(2)}억원</span>
                             </div>
                         ))}
                     </div>

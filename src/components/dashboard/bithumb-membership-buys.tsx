@@ -21,65 +21,45 @@ const membershipBuysData = {
         { rank: 4, name: '리플', ticker: 'XRP/KRW', percent: 18 },
         { rank: 5, name: '에이다', ticker: 'ADA/KRW', percent: 15 },
     ],
-    orange: [
-        { rank: 1, name: '이더리움', ticker: 'ETH/KRW', percent: 30 },
-        { rank: 2, name: '도지코인', ticker: 'DOGE/KRW', percent: 25 },
-        { rank: 3, name: '비트코인', ticker: 'BTC/KRW', percent: 20 },
-        { rank: 4, name: '아발란체', ticker: 'AVAX/KRW', percent: 18 },
-        { rank: 5, name: '폴카닷', ticker: 'DOT/KRW', percent: 12 },
-    ],
-    purple: [
-        { rank: 1, name: '리플', ticker: 'XRP/KRW', percent: 28 },
-        { rank: 2, name: '솔라나', ticker: 'SOL/KRW', percent: 24 },
-        { rank: 3, name: '이오스', ticker: 'EOS/KRW', percent: 20 },
-        { rank: 4, name: '체인링크', ticker: 'LINK/KRW', percent: 15 },
-        { rank: 5, name: '라이트코인', ticker: 'LTC/KRW', percent: 11 },
-    ],
-    green: [
-        { rank: 1, name: '도지코인', ticker: 'DOGE/KRW', percent: 40 },
-        { rank: 2, name: '시바이누', ticker: 'SHIB/KRW', percent: 30 },
-        { rank: 3, name: '페페', ticker: 'PEPE/KRW', percent: 20 },
-        { rank: 4, name: '리플', ticker: 'XRP/KRW', percent: 15 },
-        { rank: 5, name: '이더리움 클래식', ticker: 'ETC/KRW', percent: 10 },
-    ],
-    blue: [
-        { rank: 1, name: '트론', ticker: 'TRX/KRW', percent: 33 },
-        { rank: 2, name: '비트코인 캐시', ticker: 'BCH/KRW', percent: 28 },
-        { rank: 3, name: '스텔라루멘', ticker: 'XLM/KRW', percent: 21 },
-        { rank: 4, name: '알고랜드', ticker: 'ALGO/KRW', percent: 17 },
-        { rank: 5, name: '코스모스', ticker: 'ATOM/KRW', percent: 14 },
-    ],
-    white: [
-        { rank: 1, name: '이오스', ticker: 'EOS/KRW', percent: 25 },
-        { rank: 2, name: '네오', ticker: 'NEO/KRW', percent: 22 },
-        { rank: 3, 'name': '퀀텀', ticker: 'QTUM/KRW', percent: 19 },
-        { rank: 4, name: '온톨로지', ticker: 'ONT/KRW', percent: 16 },
-        { rank: 5, name: '아이콘', ticker: 'ICX/KRW', percent: 13 },
-    ],
 };
 
 const membershipLevels: { id: Membership; label: string; }[] = [
     { id: 'whale', label: '고래' },
     { id: 'black', label: '블랙' },
-    { id: 'orange', label: '오렌지' },
-    { id: 'purple', label: '퍼플' },
-    { id: 'green', label: '그린' },
-    { id: 'blue', label: '블루' },
-    { id: 'white', label: '화이트' },
 ];
 
 type Membership = keyof typeof membershipBuysData;
+
+const membershipColors: Record<Membership, string> = {
+    whale: 'bg-indigo-500 text-white hover:bg-indigo-600',
+    black: 'bg-zinc-900 text-white border border-zinc-700 hover:bg-black',
+};
+
+import { Lock } from 'lucide-react';
 
 export default function BithumbMembershipBuys() {
     const [activeTab, setActiveTab] = useState<Membership>('whale');
     const data = membershipBuysData[activeTab];
 
     return (
-        <Card>
+        <Card className="relative overflow-hidden">
+            <div className="absolute inset-0 z-10 backdrop-blur-[2px] bg-background/50 flex flex-col items-center justify-center gap-2">
+                <div className="bg-zinc-900/90 p-4 rounded-full border border-zinc-800 shadow-xl">
+                    <Lock className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <div className="text-center space-y-1">
+                    <p className="text-sm font-bold text-foreground">빗썸 플러스 멤버십 전용</p>
+                    <p className="text-xs text-muted-foreground">멤버십 구독 후 확인하실 수 있습니다</p>
+                </div>
+                <Button variant="default" size="sm" className="mt-2 bg-blue-600 hover:bg-blue-700 text-white border-none">
+                    멤버십 구독하기
+                </Button>
+            </div>
+            
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <CardTitle className="font-headline text-lg">Bithumb Lab 상위 매수</CardTitle>
+                        <CardTitle className="font-headline text-lg">Bithumb 상위 매수</CardTitle>
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger>
@@ -111,9 +91,13 @@ export default function BithumbMembershipBuys() {
                             <Button
                                 key={level.id}
                                 size="sm"
-                                variant={activeTab === level.id ? 'default' : 'ghost'}
+                                variant="ghost"
                                 onClick={() => setActiveTab(level.id)}
-                                className="rounded-full px-4 flex-shrink-0"
+                                className={`rounded-full px-4 flex-shrink-0 transition-all ${
+                                    activeTab === level.id 
+                                        ? membershipColors[level.id] 
+                                        : 'text-muted-foreground hover:bg-zinc-800'
+                                }`}
                             >
                                 {level.label}
                             </Button>

@@ -38,7 +38,7 @@ export default function BithumbTakerBuys() {
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <CardTitle className="font-headline text-lg">Bithumb Lab 시장가 매수/매도 현황</CardTitle>
+                        <CardTitle className="font-headline text-lg">Bithumb 시장가 매수/매도 현황</CardTitle>
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger>

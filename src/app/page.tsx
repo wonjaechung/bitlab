@@ -6,9 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import EtfFlowTracker from '@/components/dashboard/etf-flow-tracker';
 import CorporateHoldingsChart from '@/components/dashboard/corporate-holdings-chart';
-import GrayscaleHoldingsChart from '@/components/dashboard/grayscale-holdings-chart';
 import BithumbMembershipBuys from '@/components/dashboard/bithumb-membership-buys';
-import BithumbWhaleHoldings from '@/components/dashboard/bithumb-whale-holdings';
 import BithumbWhalePortfolio from '@/components/dashboard/bithumb-whale-portfolio';
 import DexFuturesPositions from '@/components/dashboard/dex-futures-positions';
 import MaxPainChart from '@/components/dashboard/max-pain-chart';
@@ -61,12 +59,12 @@ export default function Home() {
             <div className="space-y-6">
                 <EtfFlowTracker />
                 <CorporateHoldingsChart />
-                <GrayscaleHoldingsChart />
-                <DexFuturesPositions />
                 <MaxPainChart />
-                <BithumbMembershipBuys />
-                <BithumbWhaleHoldings />
-                <BithumbWhalePortfolio />
+                <DexFuturesPositions />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <BithumbMembershipBuys />
+                  <BithumbWhalePortfolio />
+                </div>
             </div>
           )
       case 'calendar':

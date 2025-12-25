@@ -44,7 +44,7 @@ export default function BithumbWhaleHoldings() {
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <CardTitle className="font-headline text-lg">Bithumb Lab 고래 상위 보유</CardTitle>
+                        <CardTitle className="font-headline text-lg">Bithumb 고래 상위 보유</CardTitle>
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger>

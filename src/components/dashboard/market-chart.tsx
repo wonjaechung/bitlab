@@ -168,13 +168,13 @@ const CalculatorDialog = ({
     // KRW States
     const [avgPrice, setAvgPrice] = useState<string>('');
     const [holdings, setHoldings] = useState<string>('');
-    const [buyPrice, setBuyPrice] = useState<string>(selectedCoin.price.toString());
+    const [buyPrice, setBuyPrice] = useState<string>(selectedCoin.price.toFixed(0));
     const [buyAmount, setBuyAmount] = useState<string>('');
 
     // Satoshi States
     const [satoshiMode, setSatoshiMode] = useState<'investment' | 'holding'>('investment');
     const [investKrw, setInvestKrw] = useState<string>('1000000');
-    const [targetSatMult, setTargetSatMult] = useState<number>(2); // 2x default
+    const [targetSatMult, setTargetSatMult] = useState<number>(1.0); // 1x default
     const [btcChangePct, setBtcChangePct] = useState<number>(0);
 
     // Market Cap States
@@ -186,7 +186,8 @@ const CalculatorDialog = ({
 
     // Load portfolio data when coin changes
     useEffect(() => {
-        setBuyPrice(selectedCoin.price.toString());
+        setBuyPrice(selectedCoin.price.toFixed(0));
+        setTargetSatMult(1.0); // Reset slider to 1.0 (Current Price)
         
         const userAsset = mockUserPortfolio[selectedCoin.value];
         if (userAsset) {
@@ -225,7 +226,9 @@ const CalculatorDialog = ({
         const btcPrice = btcCoin ? btcCoin.price : 100000000;
         
         // Common Data
-        const currentSat = selectedCoin.satoshi;
+        // Calculate dynamic satoshi price based on current KRW prices
+        // This ensures consistency even if selectedCoin.price updates dynamically (e.g. from API) while satoshi field in allCoins remains static
+        const currentSat = selectedCoin.value === 'BTC' ? 1.0 : (selectedCoin.price / btcPrice);
         const targetSat = currentSat * targetSatMult;
         const futureBtcPrice = btcPrice * (1 + btcChangePct / 100);
 
@@ -318,7 +321,7 @@ const CalculatorDialog = ({
                                         <div className="space-y-0.5">
                                             <span className="text-sm text-blue-400 font-bold block">빗썸 자산 연동됨</span>
                                             <span className="text-[10px] text-muted-foreground block">
-                                                보유중인 {selectedCoin.label} 자산을 불러왔습니다
+                                                보유중인 {selectedCoin.value} 자산을 불러왔습니다
                                             </span>
                                         </div>
                                     </div>
@@ -331,18 +334,18 @@ const CalculatorDialog = ({
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-blue-500/20">
-                                    <div>
-                                        <span className="text-xs text-muted-foreground block mb-1">평균단가</span>
+                                    <div className="flex flex-row items-center gap-2">
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">평균단가</span>
                                         <span className="text-lg font-bold text-blue-100">{parseFloat(avgPrice).toLocaleString()}원</span>
                                     </div>
-                                    <div className="text-right">
-                                        <span className="text-xs text-muted-foreground block mb-1">보유수량</span>
+                                    <div className="flex flex-row items-center justify-end gap-2 text-right">
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">보유수량</span>
                                         <span className="text-lg font-bold text-blue-100">{parseFloat(holdings).toLocaleString()} {selectedCoin.value}</span>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>현재 평단가</Label>
                                     <Input type="number" value={avgPrice} onChange={e => setAvgPrice(e.target.value)} />
@@ -354,13 +357,13 @@ const CalculatorDialog = ({
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border">
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
                             <div className="space-y-2">
-                                <Label className="text-primary">추가 매수가</Label>
+                                <Label className="text-primary text-xs">추가 매수가</Label>
                                 <Input type="number" value={buyPrice} onChange={e => setBuyPrice(e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-primary">추가 수량</Label>
+                                <Label className="text-primary text-xs">추가 수량</Label>
                                 <Input type="number" value={buyAmount} onChange={e => setBuyAmount(e.target.value)} />
                             </div>
                         </div>
@@ -383,9 +386,14 @@ const CalculatorDialog = ({
                                     <span>총 보유량 {krwResult.totalQty} {selectedCoin.value}</span>
                                     <span>총 투자금 {(krwResult.totalCost / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}만원</span>
                                 </div>
-                                <Button className="w-full mt-2 bg-primary hover:bg-primary/90 text-black font-bold">
-                                    지금 {selectedCoin.label} 추가 매수하러 가기
-                                </Button>
+                                <div className="flex gap-2 mt-2 w-full">
+                                    <Button className="flex-1 bg-primary hover:bg-primary/90 text-black font-bold h-10 text-xs sm:text-sm px-1">
+                                        {selectedCoin.value} 추가 매수하기
+                                    </Button>
+                                    <Button className="flex-1 bg-[#26A17B] hover:bg-[#26A17B]/90 text-white font-bold h-10 text-xs sm:text-sm px-1">
+                                        USDT 대여 후 {selectedCoin.value} 매수하기
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -399,9 +407,12 @@ const CalculatorDialog = ({
                                 <p className="text-xs mt-2">알트코인을 선택해서 분석해보세요!</p>
                             </div>
                         ) : (
-                            <Tabs defaultValue="investment" className="w-full" onValueChange={(v) => setSatoshiMode(v as any)}>
+                            <Tabs defaultValue="investment" className="w-full" onValueChange={(v) => {
+                                setSatoshiMode(v as any);
+                                setTargetSatMult(1.0);
+                            }}>
                                 <TabsList className="grid w-full grid-cols-2 mb-4">
-                                    <TabsTrigger value="investment">신규 투자 (KRW)</TabsTrigger>
+                                    <TabsTrigger value="investment">신규 투자</TabsTrigger>
                                     <TabsTrigger value="holding">보유량 늘리기</TabsTrigger>
                                 </TabsList>
 
@@ -413,14 +424,11 @@ const CalculatorDialog = ({
                                             <Input type="number" value={investKrw} onChange={e => setInvestKrw(e.target.value)} placeholder="1000000" />
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
-                                            <div className="bg-zinc-800/50 p-2 rounded-lg border border-border/50 text-xs">
-                                                <span className="text-muted-foreground block mb-1">현재가로 비트코인 매수 시</span>
-                                                <span className="font-mono font-bold block">{satResult.btcDirect?.toFixed(8) || 0} BTC 확보</span>
+                                            <div className="bg-zinc-800/50 p-2 rounded-lg border border-border/50 text-xs text-center">
+                                                <span className="text-muted-foreground block mb-1">비트코인 대신 {selectedCoin.value} 매수 시</span>
+                                                <span className="font-mono font-bold block text-primary text-sm">{satResult.altQty?.toFixed(2)} {selectedCoin.value} 확보</span>
                                             </div>
-                                            <div className="bg-zinc-800/50 p-2 rounded-lg border border-border/50 text-xs">
-                                                <span className="text-muted-foreground block mb-1">현재가로 {selectedCoin.value} 매수 시</span>
-                                                <span className="font-mono font-bold block">{satResult.altQty?.toFixed(2)} {selectedCoin.value} 확보</span>
-                                            </div>
+                                            <div className="rounded-lg border border-transparent"></div>
                                         </div>
                                     </div>
                                 </TabsContent>
@@ -452,14 +460,11 @@ const CalculatorDialog = ({
                                         )}
                                         
                                         <div className="grid grid-cols-2 gap-2">
-                                            <div className="bg-zinc-800/50 p-2 rounded-lg border border-border/50 text-xs">
+                                            <div className="bg-zinc-800/50 p-2 rounded-lg border border-border/50 text-xs text-center">
                                                 <span className="text-muted-foreground block mb-1">현재가 매도 시</span>
-                                                <span className="font-mono font-bold block">{satResult.btcFromSellNow?.toFixed(8) || 0} BTC 확보</span>
+                                                <span className="font-mono font-bold block text-primary text-sm">{satResult.btcFromSellNow?.toFixed(8) || 0} BTC 확보</span>
                                             </div>
-                                            <div className="bg-zinc-800/50 p-2 rounded-lg border border-border/50 text-xs">
-                                                <span className="text-muted-foreground block mb-1">이후 목표가 재매수 시</span>
-                                                <span className="font-mono font-bold block text-primary">{satResult.newQty?.toFixed(2) || 0} {selectedCoin.value}</span>
-                                            </div>
+                                            <div className="rounded-lg border border-transparent"></div>
                                         </div>
                                      </div>
                                 </TabsContent>
@@ -469,17 +474,18 @@ const CalculatorDialog = ({
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
                                             <div className="flex flex-col">
-                                                <Label>{selectedCoin.label} {satoshiMode === 'investment' ? '목표 상승률' : '재매수 목표가'}</Label>
+                                                <Label>{selectedCoin.value} {satoshiMode === 'investment' ? '목표 상승률' : '재매수 목표가'}</Label>
                                                 <span className="text-xs text-muted-foreground">사토시 차트 기준</span>
                                             </div>
-                                            <span className="text-lg font-bold text-primary">{targetSatMult}배 <span className="text-xs font-normal text-muted-foreground">({satResult.targetSat.toFixed(8)} BTC)</span></span>
+                                            <span className="text-lg font-bold text-primary">{(targetSatMult - 1) * 100 >= 0 ? '+' : ''}{((targetSatMult - 1) * 100).toFixed(0)}% <span className="text-xs font-normal text-muted-foreground">({satResult.targetSat.toFixed(8)} BTC)</span></span>
                                         </div>
                                         <Slider 
                                             value={[targetSatMult]} 
                                             min={satoshiMode === 'investment' ? 1.0 : 0.1} 
-                                            max={satoshiMode === 'investment' ? 5.0 : 2.0} 
-                                            step={0.1} 
+                                            max={satoshiMode === 'investment' ? 5.0 : 1.0} 
+                                            step={0.01} 
                                             onValueChange={(v) => setTargetSatMult(v[0])} 
+                                            dir={satoshiMode === 'holding' ? 'rtl' : 'ltr'}
                                         />
                                         <div className="flex justify-between text-xs text-muted-foreground px-1">
                                             {satoshiMode === 'investment' ? (
@@ -490,9 +496,9 @@ const CalculatorDialog = ({
                                                 </>
                                             ) : (
                                                 <>
+                                                    <span>현재가</span>
+                                                    <span>-50%</span>
                                                     <span>-90%</span>
-                                                    <span>0%</span>
-                                                    <span>+100%</span>
                                                 </>
                                             )}
                                         </div>
@@ -533,7 +539,7 @@ const CalculatorDialog = ({
                                     <div className="space-y-2">
                                         <div className="flex justify-between items-center pb-2 border-b border-border/50">
                                             <span className="text-sm text-muted-foreground">
-                                                {satoshiMode === 'investment' ? `${selectedCoin.value} 매도 후 비트코인 환전 시` : '비트코인으로 재매수 시'}
+                                                {satoshiMode === 'investment' ? `${selectedCoin.value} 매도 후 비트코인 구매 시` : `BTC 매도 후 ${selectedCoin.value} 재매수 시`}
                                             </span>
                                             <div className="text-right">
                                                 <span className="text-xl font-bold text-primary block">
@@ -552,9 +558,14 @@ const CalculatorDialog = ({
                                             </div>
                                         </div>
                                         
-                                        <Button className="w-full mt-4 bg-primary hover:bg-primary/90 text-black font-bold">
-                                            {satoshiMode === 'investment' ? `지금 ${selectedCoin.label} 매수하러 가기` : `지금 ${selectedCoin.label} 매도하러 가기`}
-                                        </Button>
+                                        <div className="flex gap-2 mt-4 w-full">
+                                            <Button className="flex-1 bg-primary hover:bg-primary/90 text-black font-bold h-10 text-xs sm:text-sm px-1">
+                                                {satoshiMode === 'investment' ? `${selectedCoin.value} 매수하기` : `${selectedCoin.value} 매도하기`}
+                                            </Button>
+                                            <Button className="flex-1 bg-[#26A17B] hover:bg-[#26A17B]/90 text-white font-bold h-10 text-xs sm:text-sm px-1">
+                                                {satoshiMode === 'investment' ? `BTC 대여 후 ${selectedCoin.value} 매수하기` : `${selectedCoin.value} 대여 후 매도하기`}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </Tabs>

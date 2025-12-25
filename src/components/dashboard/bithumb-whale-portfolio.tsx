@@ -21,20 +21,13 @@ const portfolioData = {
         { rank: 4, name: '스테이블코인', ticker: 'STABLE', value: 5 },
         { rank: 5, name: '기타', ticker: 'OTHERS', value: 5 },
     ],
-    orange: [
-        { rank: 1, name: '비트코인', ticker: 'BTC', value: 35 },
-        { rank: 2, name: '이더리움', ticker: 'ETH', value: 30 },
-        { rank: 3, name: '솔라나', ticker: 'SOL', value: 15 },
-        { rank: 4, name: '리플', ticker: 'XRP', value: 10 },
-        { rank: 5, name: '기타', ticker: 'OTHERS', value: 10 },
-    ],
-    purple: [
-        { rank: 1, name: '이더리움', ticker: 'ETH', value: 40 },
-        { rank: 2, name: '솔라나', ticker: 'SOL', value: 20 },
-        { rank: 3, name: '에이다', ticker: 'ADA', value: 15 },
-        { rank: 4, name: '비트코인', ticker: 'BTC', value: 10 },
-        { rank: 5, name: '기타', ticker: 'OTHERS', value: 15 },
-    ],
+    grayscale: [
+        { rank: 1, name: '비트코인', ticker: 'BTC', value: 277380, percentOfSupply: 1.32, price: 98000000 },
+        { rank: 2, name: '이더리움', ticker: 'ETH', value: 3000000, percentOfSupply: 2.5, price: 4500000 },
+        { rank: 3, name: '이더리움 클래식', ticker: 'ETC', value: 10000000, percentOfSupply: 4.78, price: 32000 },
+        { rank: 4, name: '비트코인 캐시', ticker: 'BCH', value: 300000, percentOfSupply: 1.5, price: 550000 },
+        { rank: 5, name: '라이트코인', ticker: 'LTC', value: 1500000, percentOfSupply: 2.02, price: 110000 },
+    ]
 };
 
 type PortfolioTab = keyof typeof portfolioData;
@@ -42,9 +35,14 @@ type PortfolioTab = keyof typeof portfolioData;
 const portfolioTabs: { id: PortfolioTab; label: string; }[] = [
     { id: 'whale', label: '고래' },
     { id: 'black', label: '블랙' },
-    { id: 'orange', label: '오렌지' },
-    { id: 'purple', label: '퍼플' },
+    { id: 'grayscale', label: '그레이스케일' },
 ];
+
+const membershipColors: Record<PortfolioTab, string> = {
+    whale: 'bg-indigo-500 text-white hover:bg-indigo-600',
+    black: 'bg-zinc-900 text-white border border-zinc-700 hover:bg-black',
+    grayscale: 'bg-zinc-200 text-black hover:bg-zinc-300',
+};
 
 export default function BithumbWhalePortfolio() {
     const [activeTab, setActiveTab] = useState<PortfolioTab>('whale');
@@ -55,7 +53,7 @@ export default function BithumbWhalePortfolio() {
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <CardTitle className="font-headline text-lg">Bithumb Lab 평균 포트폴리오</CardTitle>
+                        <CardTitle className="font-headline text-lg">고래 평균 포트폴리오</CardTitle>
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger>
@@ -74,9 +72,13 @@ export default function BithumbWhalePortfolio() {
                             <Button
                                 key={tab.id}
                                 size="sm"
-                                variant={activeTab === tab.id ? 'default' : 'ghost'}
+                                variant="ghost"
                                 onClick={() => setActiveTab(tab.id)}
-                                className="rounded-full px-4 flex-shrink-0"
+                                className={`rounded-full px-4 flex-shrink-0 transition-all ${
+                                    activeTab === tab.id 
+                                        ? membershipColors[tab.id] 
+                                        : 'text-muted-foreground hover:bg-zinc-800'
+                                }`}
                             >
                                 {tab.label}
                             </Button>
@@ -97,8 +99,28 @@ export default function BithumbWhalePortfolio() {
                                     </div>
                                 </div>
                                  <div className="text-right">
-                                    <span className="font-code font-bold text-lg text-primary">{item.value}%</span>
-                                    <p className="text-xs text-muted-foreground">비중</p>
+                                    {activeTab === 'grayscale' ? (
+                                        <div className="flex flex-col items-end">
+                                            <span className="font-code font-bold text-lg text-primary">{item.percentOfSupply}%</span>
+                                            <span className="text-xs text-muted-foreground">공급량 대비</span>
+                                            {item.price && (
+                                                <span className="text-[10px] text-muted-foreground mt-0.5">
+                                                    {(() => {
+                                                        const valInEok = item.value * item.price / 100000000;
+                                                        if (valInEok >= 10000) {
+                                                            return `${(valInEok / 10000).toFixed(2)}조원`;
+                                                        }
+                                                        return `${valInEok.toLocaleString(undefined, { maximumFractionDigits: 0 })}억원`;
+                                                    })()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <span className="font-code font-bold text-lg text-primary">{item.value}%</span>
+                                            <p className="text-xs text-muted-foreground">비중</p>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         ))}
