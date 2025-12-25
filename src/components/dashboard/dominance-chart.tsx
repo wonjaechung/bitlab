@@ -111,19 +111,36 @@ const CustomTooltip = ({ active, payload, label, indicator }: any) => {
     const btcPricePayload = payload.find(p => p.dataKey === 'btcPrice');
     const valuePayload = payload.find(p => p.dataKey === 'value');
     
+    // Format date based on length/content of label if possible, or assume daily
+    const dateLabel = new Date(label).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+
     return (
-      <div className="bg-background/80 backdrop-blur-sm p-2 border rounded-lg shadow-lg">
-        <p className="font-bold">{new Date(label).toLocaleDateString()}</p>
-        {valuePayload && (
-             <p className="text-sm" style={{ color: valuePayload.stroke }}>
-                {indicator.id === 'drop' ? '고점대비낙폭' : indicator.title}: {valuePayload.value.toFixed(2)}{indicator.unit}
-            </p>
-        )}
-        {btcPricePayload && (
-            <p className="text-sm" style={{ color: btcPricePayload.stroke }}>
-                BTC 가격: ${btcPricePayload.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-        )}
+      <div className="bg-background/95 backdrop-blur-sm p-3 border rounded-lg shadow-lg min-w-[180px]">
+        <p className="font-bold text-sm mb-2 text-zinc-300">{dateLabel}</p>
+        <div className="space-y-1">
+            {valuePayload && (
+                <div className="flex items-center justify-between gap-4 text-sm">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: valuePayload.stroke }} />
+                        <span className="text-zinc-400">{indicator.id === 'drop' ? '고점대비낙폭' : indicator.title}</span>
+                    </div>
+                    <span className="font-mono font-medium" style={{ color: valuePayload.stroke }}>
+                        {valuePayload.value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}{indicator.unit}
+                    </span>
+                </div>
+            )}
+            {btcPricePayload && (
+                <div className="flex items-center justify-between gap-4 text-sm">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: btcPricePayload.stroke }} />
+                        <span className="text-zinc-400">BTC 가격</span>
+                    </div>
+                     <span className="font-mono font-medium" style={{ color: btcPricePayload.stroke }}>
+                        ${btcPricePayload.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </span>
+                </div>
+            )}
+        </div>
       </div>
     );
   }
@@ -132,7 +149,7 @@ const CustomTooltip = ({ active, payload, label, indicator }: any) => {
 let activeTimeframe = 'All';
 
 export default function DominanceChart() {
-    const [internalActiveTimeframe, setInternalActiveTimeframe] = useState('24h');
+    const [internalActiveTimeframe, setInternalActiveTimeframe] = useState('7D');
     activeTimeframe = internalActiveTimeframe;
     const [activeIndicator, setActiveIndicator] = useState<IndicatorId>('volume');
     const [chartData, setChartData] = useState<any[]>([]);
@@ -140,27 +157,75 @@ export default function DominanceChart() {
     useEffect(() => {
         const fetchData = async () => {
             const days = timeframeToDays[internalActiveTimeframe] || 365;
-
-            if (activeIndicator === 'drop') {
+            
+            // Handle real data for Dominance, Fear/Greed, and now Stablecoins
+            if (activeIndicator === 'dominance' || activeIndicator === 'fear' || activeIndicator === 'stable') {
                 try {
-                    const res = await fetch('/api/btc-metrics?type=history');
+                    const endpoint = activeIndicator === 'stable' ? '/api/btc-metrics?type=history_stable' : '/api/btc-metrics?type=history_fgi';
+                    
+                    const res = await fetch(endpoint);
                     if (res.ok) {
-                        const allData = await res.json();
-                        // Filter data based on days
-                        // Note: Data is expected to be daily.
-                        const filteredData = (days < 5475 && days < allData.length)
-                            ? allData.slice(allData.length - days)
-                            : allData;
-                        
-                        setChartData(filteredData);
+                        const historyData = await res.json();
+                        // Filter by date
+                        let filtered = historyData;
+                        // Limit if not 'All'
+                        if (internalActiveTimeframe !== 'All') {
+                             filtered = historyData.slice(-days);
+                        }
+
+                        // Map to chart format
+                        const mappedData = filtered.map((d: any) => ({
+                            date: d.date,
+                            value: activeIndicator === 'dominance' ? d.dominance : (activeIndicator === 'fear' ? d.fear : d.value),
+                            btcPrice: d.btcPrice
+                        }));
+
+                        setChartData(mappedData);
                         return;
                     }
                 } catch (e) {
-                    console.error("Failed to fetch drop history", e);
+                    console.error("Failed to fetch history data", e);
                 }
             }
 
-            const newData = generateData(days, activeIndicator);
+            let btcHistory: any[] = [];
+            
+            // Always fetch BTC history for other indicators if needed (or if fallback is needed)
+            try {
+                const res = await fetch('/api/btc-metrics?type=history');
+                if (res.ok) {
+                    btcHistory = await res.json();
+                }
+            } catch (e) {
+                console.error("Failed to fetch btc history", e);
+            }
+
+            if (activeIndicator === 'drop') {
+                if (btcHistory.length > 0) {
+                    const filteredData = (days < 5475 && days < btcHistory.length)
+                        ? btcHistory.slice(btcHistory.length - days)
+                        : btcHistory;
+                    
+                    setChartData(filteredData);
+                    return;
+                }
+            }
+
+            let newData = generateData(days, activeIndicator);
+            
+            // Merge BTC price for other indicators
+            if (btcHistory.length > 0) {
+                // Align the end of both arrays
+                const sliceStart = btcHistory.length - newData.length;
+                newData = newData.map((d, i) => {
+                    const btcIndex = sliceStart + i;
+                    const price = (btcIndex >= 0 && btcIndex < btcHistory.length) 
+                        ? btcHistory[btcIndex].btcPrice 
+                        : null;
+                    return { ...d, btcPrice: price };
+                });
+            }
+
             setChartData(newData);
         };
 
@@ -183,21 +248,30 @@ export default function DominanceChart() {
                  return (value: number) => `${value.toFixed(0)}%`;
             }
         }
-
-        switch(activeIndicator) {
-            case 'dominance':
-            case 'kimchi':
-                return (value: number) => `${value.toFixed(0)}%`;
-            case 'volume':
-                return (value: number) => `${value.toFixed(2)}조`;
-            case 'stable':
-                return (value: number) => `$${value.toFixed(0)}B`;
-            case 'm2':
-                 return (value: number) => `${value.toFixed(0)}조`;
-            case 'fear':
-                return (value: number) => value.toFixed(0);
-            default:
-                return (value: number) => value.toString();
+        
+        // For other charts: Left is Indicator, Right is BTC Price
+        if (isLeft) {
+            switch(activeIndicator) {
+                case 'dominance':
+                case 'kimchi':
+                    return (value: number) => `${value.toFixed(0)}%`;
+                case 'volume':
+                    return (value: number) => `${value.toFixed(2)}조`;
+                case 'stable':
+                    return (value: number) => `${value.toFixed(0)}조`;
+                case 'm2':
+                     return (value: number) => `${value.toFixed(0)}조`;
+                case 'fear':
+                    return (value: number) => value.toFixed(0);
+                default:
+                    return (value: number) => value.toString();
+            }
+        } else {
+            // Right axis for BTC Price
+            return (value: number) => {
+                if (value >= 1000) return `${(value/1000).toFixed(1)}k`;
+                return value.toFixed(0);
+            };
         }
     }
 
@@ -205,12 +279,25 @@ export default function DominanceChart() {
         if (isDrawdownChart) {
             return isLeft ? [0.01, 100000] : [-100, 0];
         }
-        const values = chartData.map(d => d.value);
-        if (values.length === 0) return [0, 100];
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-        const padding = (max - min) * 0.1;
-        return [min - padding, max + padding];
+        
+        if (isLeft) {
+            const values = chartData.map(d => d.value).filter(v => v !== null && v !== undefined && !isNaN(v));
+            if (values.length === 0) return [0, 100];
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const padding = (max - min) * 0.1;
+            // Ensure padding is not zero
+            const padVal = padding === 0 ? max * 0.1 : padding;
+            return [Math.max(0, min - padVal), max + padVal];
+        } else {
+            // Right axis for BTC Price
+            const prices = chartData.map(d => d.btcPrice).filter(p => p != null && !isNaN(p));
+            if (prices.length === 0) return ['auto', 'auto'];
+            const min = Math.min(...prices);
+            const max = Math.max(...prices);
+            const padding = (max - min) * 0.1;
+            return [min - padding, max + padding];
+        }
     }
 
 
@@ -307,22 +394,17 @@ export default function DominanceChart() {
                         <h3 className="text-lg font-bold text-white">보조지표</h3>
                     </div>
                     <div className="flex flex-col items-end">
-                        <div className="flex items-center gap-2 mb-1">
-                            <h2 className="text-lg font-bold text-white">
-                                {currentIndicator.title}
-                            </h2>
-                        </div>
                         <div className="text-right">
-                            {!isDrawdownChart ? (
-                                <p className="text-2xl font-bold text-white whitespace-nowrap leading-none tracking-tight">{chartData.length > 0 ? `${chartData[chartData.length - 1].value.toFixed(2)}${currentIndicator.unit || ''}` : currentIndicator.value}</p>
-                            ) : (
-                                <div className="flex flex-col items-end gap-1">
-                                    <div className='flex items-center gap-1 text-sm'>
-                                        <div className='w-3 h-3 rounded-sm' style={{backgroundColor: '#16a34a'}}/>
-                                        <span>고점대비낙폭</span>
-                                    </div>
+                            <div className="flex flex-col items-end gap-1">
+                                <div className='flex items-center gap-1 text-sm'>
+                                    <div className='w-3 h-3 rounded-sm' style={{backgroundColor: isDrawdownChart ? '#16a34a' : 'hsl(var(--bullish))'}}/>
+                                    <span>{isDrawdownChart ? '고점대비낙폭' : currentIndicator.title}</span>
                                 </div>
-                            )}
+                                <div className='flex items-center gap-1 text-sm'>
+                                    <div className='w-3 h-3 rounded-sm' style={{backgroundColor: '#F7931A'}}/>
+                                    <span>BTC 가격</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -374,11 +456,17 @@ export default function DominanceChart() {
                                         return new Date(tick).getFullYear().toString();
                                     }
                                     if(internalActiveTimeframe === '24h') {
-                                        return new Date(tick).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                                        return new Date(tick).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                    }
+                                    // Simpler date format for long periods
+                                    if (internalActiveTimeframe === 'All' || internalActiveTimeframe === '1Y') {
+                                        const date = new Date(tick);
+                                        return `${date.getFullYear()}.${date.getMonth() + 1}`;
                                     }
                                     return tick;
                                 }}
-                                interval={isDrawdownChart ? Math.floor(chartData.length / 15) : Math.floor(chartData.length / 7)}
+                                interval={internalActiveTimeframe === 'All' || internalActiveTimeframe === '1Y' ? 'preserveStartEnd' : (isDrawdownChart ? Math.floor(chartData.length / 15) : Math.floor(chartData.length / 7))}
+                                minTickGap={30}
                             />
                             <YAxis
                                 yAxisId="left"
@@ -403,7 +491,7 @@ export default function DominanceChart() {
                             />
                             <Tooltip
                                 content={<CustomTooltip indicator={currentIndicator} />}
-                                wrapperStyle={{ outline: 'none', display: 'none' }}
+                                wrapperStyle={{ outline: 'none' }}
                                 cursor={false}
                             />
                             <Area 
@@ -415,7 +503,7 @@ export default function DominanceChart() {
                                 fill="url(#colorValue)"
                                 fillOpacity={1}
                             />
-                            {isDrawdownChart && <Line yAxisId="left" type="monotone" dataKey="btcPrice" name="BTC 가격" stroke="#F7931A" strokeWidth={2} dot={false} />}
+                            <Line yAxisId={isDrawdownChart ? "left" : "right"} type="monotone" dataKey="btcPrice" name="BTC 가격" stroke="#F7931A" strokeWidth={2} dot={false} />
                         </ComposedChart>
                     </ResponsiveContainer>
                 </div>

@@ -30,7 +30,7 @@ export const indicatorData: Record<IndicatorId, IndicatorData> = {
     kimchi: { id: 'kimchi', component: KimchiPremium, title: '김치 프리미엄', value: '1.38%', unit: '%' },
     fear: { id: 'fear', component: BtcFearGreedIndex, title: 'BTC 공포/탐욕', value: '41', unit: '' },
     drop: { id: 'drop', component: BtcPriceDrop, title: 'BTC 고점대비 낙폭', value: '-2.00%', unit: '%' },
-    stable: { id: 'stable', component: StablecoinMarketCap, title: '스테이블 시총', value: '$162.7B', unit: 'B' },
+    stable: { id: 'stable', component: StablecoinMarketCap, title: '스테이블 시총', value: '90.8조', unit: '조' },
     m2: { id: 'm2', component: M2Supply, title: 'M2 통화량', value: '4100.2조', unit: '조', icon: Landmark },
 };
 

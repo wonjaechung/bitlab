@@ -29,7 +29,7 @@ const allCoins = [
     { value: 'LINK', label: '체인링크', price: 21000, satoshi: 0.00024, marketCap: 12000000000000, change: 1.50, vwapPosition: 58 },
 ]
 
-const generateData = (coin: typeof allCoins[0], chartType: '원화' | '사토시' | '시가총액') => {
+const generateData = (coin: typeof allCoins[0], chartType: '원화' | '사토시' | '시가총액', timeframe: string) => {
     const data = [];
     let baseValue;
     switch(chartType) {
@@ -38,12 +38,46 @@ const generateData = (coin: typeof allCoins[0], chartType: '원화' | '사토시
         case '시가총액': baseValue = coin.marketCap; break;
     }
 
-    for (let i = 0; i < 25; i++) {
+    let points = 24;
+    let variation = 0.05;
+
+    switch(timeframe) {
+        case '24h': points = 24; variation = 0.02; break;
+        case '7D': points = 28; variation = 0.10; break;
+        case '30D': points = 30; variation = 0.15; break;
+        case '90D': points = 90; variation = 0.25; break;
+        case '1Y': points = 52; variation = 0.40; break;
+        case 'All': points = 60; variation = 0.60; break;
+    }
+
+    for (let i = 0; i < points; i++) {
         const date = new Date();
-        date.setHours(date.getHours() - (24 - i));
-        let value = baseValue * (1 + (Math.random() - 0.5) * 0.1);
+        if (timeframe === '24h') {
+             date.setHours(date.getHours() - (points - 1 - i));
+        } else if (timeframe === '7D') {
+             date.setHours(date.getHours() - (points - 1 - i) * 6); 
+        } else if (timeframe === '30D' || timeframe === '90D') {
+             date.setDate(date.getDate() - (points - 1 - i));
+        } else if (timeframe === '1Y') {
+             date.setDate(date.getDate() - (points - 1 - i) * 7);
+        } else {
+             date.setMonth(date.getMonth() - (points - 1 - i));
+        }
+
+        let value = baseValue * (1 + (Math.random() - 0.5) * variation);
+        if (i === points - 1) value = baseValue;
+
+        let timeLabel = '';
+        if (timeframe === '24h') {
+            timeLabel = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+        } else if (timeframe === '1Y' || timeframe === 'All') {
+            timeLabel = date.toLocaleDateString('ko-KR', { year: '2-digit', month: 'numeric' });
+        } else {
+             timeLabel = date.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+        }
+        
         data.push({
-            time: `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
+            time: timeLabel,
             value: value
         });
     }
@@ -74,7 +108,17 @@ const ChartTypeButton = ({ active, onClick, children }: { active: boolean, onCli
     </Button>
 );
 
-const RangeBar = ({ vwapPosition, showVwap, currentPosition, lowPrice, highPrice } : { vwapPosition: number, showVwap: boolean, currentPosition: number, lowPrice: number, highPrice: number }) => (
+const formatRangeValue = (value: number, type: '원화' | '사토시' | '시가총액') => {
+    if (type === '사토시') return `${value.toFixed(8)} BTC`;
+    if (type === '시가총액') {
+        if (value >= 1000000000000) return `${(value / 1000000000000).toFixed(2)}조`;
+        if (value >= 100000000) return `${(value / 100000000).toFixed(0)}억원`;
+        return `${value.toLocaleString()}원`;
+    }
+    return `${value.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}원`;
+};
+
+const RangeBar = ({ vwapPosition, showVwap, currentPosition, lowPrice, highPrice, activeChartType } : { vwapPosition: number, showVwap: boolean, currentPosition: number, lowPrice: number, highPrice: number, activeChartType: '원화' | '사토시' | '시가총액' }) => (
     <div className="w-full relative h-10 mt-4">
         <div className="h-1.5 bg-gradient-to-r from-red-600 via-yellow-500 to-green-500 rounded-full w-full absolute top-1/2 -translate-y-1/2" />
         
@@ -91,11 +135,11 @@ const RangeBar = ({ vwapPosition, showVwap, currentPosition, lowPrice, highPrice
         </div>
         <div className="flex justify-between text-xs text-zinc-400 absolute w-full" style={{ top: 'calc(50% + 0.75rem)' }}>
             <div className="flex flex-col items-start">
-                <span>{lowPrice.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}원</span>
+                <span>{formatRangeValue(lowPrice, activeChartType)}</span>
                 <span className="text-[10px] text-zinc-600 mt-0.5">저가</span>
             </div>
             <div className="flex flex-col items-end">
-                <span>{highPrice.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}원</span>
+                <span>{formatRangeValue(highPrice, activeChartType)}</span>
                 <span className="text-[10px] text-zinc-600 mt-0.5">고가</span>
             </div>
         </div>
@@ -612,14 +656,59 @@ const CalculatorDialog = ({
 };
 
 export default function MarketChart() {
-    const [activeTimeframe, setActiveTimeframe] = useState('24h');
+    const [activeTimeframe, setActiveTimeframe] = useState('7D');
     const [activeChartType, setActiveChartType] = useState<'원화' | '사토시' | '시가총액'>('원화');
     const [selectedCoin, setSelectedCoin] = useState(allCoins.find(c => c.value === 'XRP') || allCoins[0]);
     const [popoverOpen, setPopoverOpen] = useState(false);
     
-    const chartData = useMemo(() => {
-        return generateData(selectedCoin, activeChartType);
-    }, [selectedCoin, activeChartType, activeTimeframe]);
+    const [chartData, setChartData] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (selectedCoin.value === 'XRP' && activeChartType === '원화') {
+                try {
+                    const res = await fetch(`/api/xrp-metrics?timeframe=${activeTimeframe}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setChartData(data);
+                        
+                        // Update current price to match the latest data point
+                        if (data.length > 0) {
+                             const latestPrice = data[data.length - 1].value;
+                             setSelectedCoin(prev => {
+                                 if (prev.value === 'XRP' && prev.price !== latestPrice) {
+                                     return { ...prev, price: latestPrice };
+                                 }
+                                 return prev;
+                             });
+                        }
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch XRP data", e);
+                }
+            }
+            
+            // Fallback to generated data
+            setChartData(generateData(selectedCoin, activeChartType, activeTimeframe));
+        };
+
+        fetchData();
+    }, [selectedCoin.value, activeChartType, activeTimeframe]);
+
+    const { minPrice, maxPrice, currentPrice, currentPosition } = useMemo(() => {
+        if (!chartData.length) return { minPrice: 0, maxPrice: 0, currentPrice: 0, currentPosition: 50 };
+        
+        const values = chartData.map(d => d.value);
+        const minPrice = Math.min(...values);
+        const maxPrice = Math.max(...values);
+        const currentPrice = values[values.length - 1];
+        
+        const range = maxPrice - minPrice;
+        const currentPosition = range === 0 ? 50 : ((currentPrice - minPrice) / range) * 100;
+        
+        return { minPrice, maxPrice, currentPrice, currentPosition };
+    }, [chartData]);
 
 
     const handleCoinSelect = (coinValue: string) => {
@@ -753,7 +842,14 @@ export default function MarketChart() {
                                 <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
                                 </linearGradient>
                             </defs>
-                            <XAxis dataKey="time" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} interval={5} />
+                            <XAxis 
+                                dataKey="time" 
+                                stroke="#6b7280" 
+                                fontSize={12} 
+                                tickLine={false} 
+                                axisLine={false} 
+                                interval={Math.floor(chartData.length / 5)} 
+                            />
                             <YAxis
                                 orientation="right"
                                 stroke="#6b7280"
@@ -798,9 +894,10 @@ export default function MarketChart() {
                         <RangeBar 
                             vwapPosition={selectedCoin.vwapPosition} 
                             showVwap={activeChartType !== '시가총액'}
-                            currentPosition={30}
-                            lowPrice={selectedCoin.price * 0.98}
-                            highPrice={selectedCoin.price * 1.02}
+                            currentPosition={currentPosition}
+                            lowPrice={minPrice}
+                            highPrice={maxPrice}
+                            activeChartType={activeChartType}
                         />
                     </div>
                 </div>

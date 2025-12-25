@@ -173,7 +173,7 @@ type PastImpact = {
 
 type EventDetailData = {
     description: string;
-    history: { date: string; actual: number; consensus: number }[];
+    history: { date: string; actual: number; consensus: number; btcPrice: number }[];
     scenarios: {
         high: EventScenario;
         low: EventScenario;
@@ -185,12 +185,12 @@ type EventDetailData = {
 const MOCK_CPI_DATA: EventDetailData = {
     description: "미국 소비자들이 물건을 살 때 느끼는 물가 상승률입니다. 연준(Fed)이 금리를 올릴지 내릴지 결정하는 가장 중요한 성적표입니다.",
     history: [
-        { date: '24.12', actual: 3.1, consensus: 3.2 },
-        { date: '25.01', actual: 3.0, consensus: 3.0 },
-        { date: '25.02', actual: 2.9, consensus: 2.9 },
-        { date: '25.03', actual: 3.2, consensus: 3.0 },
-        { date: '25.04', actual: 3.1, consensus: 3.2 },
-        { date: '25.05', actual: 2.8, consensus: 2.9 },
+        { date: '24.12', actual: 3.1, consensus: 3.2, btcPrice: 96000000 },
+        { date: '25.01', actual: 3.0, consensus: 3.0, btcPrice: 98500000 },
+        { date: '25.02', actual: 2.9, consensus: 2.9, btcPrice: 102000000 },
+        { date: '25.03', actual: 3.2, consensus: 3.0, btcPrice: 95000000 },
+        { date: '25.04', actual: 3.1, consensus: 3.2, btcPrice: 99000000 },
+        { date: '25.05', actual: 2.8, consensus: 2.9, btcPrice: 105000000 },
     ],
     scenarios: {
         high: {
@@ -217,12 +217,12 @@ const MOCK_CPI_DATA: EventDetailData = {
 const MOCK_INTEREST_RATE_DATA: EventDetailData = {
     description: "미국 연방준비제도(Fed)의 기준금리 결정입니다. 전 세계 금융 시장의 유동성과 자산 가치 평가의 기준이 되는 가장 중요한 이벤트입니다.",
     history: [
-        { date: '24.09', actual: 4.50, consensus: 4.50 },
-        { date: '24.11', actual: 4.25, consensus: 4.25 },
-        { date: '24.12', actual: 4.00, consensus: 4.00 },
-        { date: '25.02', actual: 3.75, consensus: 3.75 },
-        { date: '25.03', actual: 3.75, consensus: 3.75 },
-        { date: '25.05', actual: 3.50, consensus: 3.50 },
+        { date: '24.09', actual: 4.50, consensus: 4.50, btcPrice: 88000000 },
+        { date: '24.11', actual: 4.25, consensus: 4.25, btcPrice: 92000000 },
+        { date: '24.12', actual: 4.00, consensus: 4.00, btcPrice: 96000000 },
+        { date: '25.02', actual: 3.75, consensus: 3.75, btcPrice: 102000000 },
+        { date: '25.03', actual: 3.75, consensus: 3.75, btcPrice: 95000000 },
+        { date: '25.05', actual: 3.50, consensus: 3.50, btcPrice: 105000000 },
     ],
     scenarios: {
         high: { 
@@ -248,12 +248,12 @@ const MOCK_INTEREST_RATE_DATA: EventDetailData = {
 const MOCK_UNEMPLOYMENT_DATA: EventDetailData = {
     description: "경제 활동 인구 중 실업자의 비율입니다. 경기 침체 여부와 소비 여력을 판단하는 핵심 지표로, '샴의 법칙' 등 경기 침체 시그널로 활용됩니다.",
     history: [
-        { date: '24.12', actual: 4.1, consensus: 4.1 },
-        { date: '25.01', actual: 4.2, consensus: 4.2 },
-        { date: '25.02', actual: 4.2, consensus: 4.3 },
-        { date: '25.03', actual: 4.3, consensus: 4.3 },
-        { date: '25.04', actual: 4.4, consensus: 4.4 },
-        { date: '25.05', actual: 4.5, consensus: 4.4 },
+        { date: '24.12', actual: 4.1, consensus: 4.1, btcPrice: 96000000 },
+        { date: '25.01', actual: 4.2, consensus: 4.2, btcPrice: 98000000 },
+        { date: '25.02', actual: 4.2, consensus: 4.3, btcPrice: 102000000 },
+        { date: '25.03', actual: 4.3, consensus: 4.3, btcPrice: 95000000 },
+        { date: '25.04', actual: 4.4, consensus: 4.4, btcPrice: 99000000 },
+        { date: '25.05', actual: 4.5, consensus: 4.4, btcPrice: 105000000 },
     ],
     scenarios: {
         high: { 
@@ -456,14 +456,29 @@ const EventDetailPanel = ({ event }: { event: CalendarEvent }) => {
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={data.history} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
                             <XAxis dataKey="date" fontSize={11} tickLine={false} axisLine={false} tickMargin={10} />
-                            <YAxis domain={['auto', 'auto']} fontSize={11} tickLine={false} axisLine={false} width={30} />
+                            <YAxis yAxisId="left" domain={['auto', 'auto']} fontSize={11} tickLine={false} axisLine={false} width={30} />
+                            <YAxis 
+                                yAxisId="right" 
+                                orientation="right" 
+                                domain={['auto', 'auto']} 
+                                fontSize={11} 
+                                tickLine={false} 
+                                axisLine={false} 
+                                width={40} 
+                                tickFormatter={(val) => `${(val/100000000).toFixed(1)}억`} 
+                            />
                             <RechartsTooltip 
                                 contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                                 itemStyle={{ fontSize: '12px' }}
                                 labelStyle={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}
+                                formatter={(value: number, name: string) => {
+                                    if (name === 'BTC 가격') return `${(value/10000).toLocaleString()}만원`;
+                                    return value;
+                                }}
                             />
-                            <Line type="monotone" dataKey="actual" name="실제" stroke="#ef4444" strokeWidth={2} dot={{ r: 4, strokeWidth: 0, fill: '#ef4444' }} activeDot={{ r: 6 }} />
-                            <Line type="monotone" dataKey="consensus" name="예측" stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 4, strokeWidth: 0, fill: '#3b82f6' }} />
+                            <Line yAxisId="left" type="monotone" dataKey="actual" name="실제" stroke="#ef4444" strokeWidth={2} dot={{ r: 4, strokeWidth: 0, fill: '#ef4444' }} activeDot={{ r: 6 }} />
+                            <Line yAxisId="left" type="monotone" dataKey="consensus" name="예측" stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 4, strokeWidth: 0, fill: '#3b82f6' }} />
+                            <Line yAxisId="right" type="monotone" dataKey="btcPrice" name="BTC 가격" stroke="#f59e0b" strokeWidth={2} dot={false} />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
@@ -475,6 +490,10 @@ const EventDetailPanel = ({ event }: { event: CalendarEvent }) => {
                     <div className="flex items-center gap-1.5">
                         <div className="w-2 h-0.5 border-t-2 border-dashed border-blue-500"></div>
                         <span>예측값</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-0.5 bg-yellow-500"></div>
+                        <span>BTC 가격</span>
                     </div>
                 </div>
             </div>
